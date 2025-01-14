@@ -20,7 +20,8 @@ class Client:
         try:
             while True:
                 host, path = self.args.url.split('//')[1].split('/', 1)
-                request = f"{self.args.method} {path}/ HTTP/1.1\r\nHost: {host}\r\n"
+                request = f"{self.args.method} {path} HTTP/1.1\r\nHost: {host}\r\n"
+                print("path -", path)
                 if self.args.headers:
                     for header in self.args.headers:
                         key, value = header.split(":")
@@ -30,10 +31,10 @@ class Client:
                     request += "\r\n" + self.args.data
                 else:
                     request += "\r\n"
-
+                print(request)
                 self.client.sendall(request.encode())
                 response = self.client.recv(4096).decode()
-                print("im here", response)
+                print(response)
         finally:    
             print("close")
             self.client.close()
