@@ -1,6 +1,7 @@
 import socket
 import argparse
-
+from message import HTTP_Request
+from message import HTTP_Response
 
 class Client:
     def __init__(self, host, port):
@@ -19,9 +20,9 @@ class Client:
     def send_request(self):
         try:
             while True:
+                ##Перенести это дело в класс запроса
                 host, path = self.args.url.split('//')[1].split('/', 1)
                 request = f"{self.args.method} {path} HTTP/1.1\r\nHost: {host}\r\n"
-                print("path -", path)
                 if self.args.headers:
                     for header in self.args.headers:
                         key, value = header.split(":")
@@ -31,16 +32,18 @@ class Client:
                     request += "\r\n" + self.args.data
                 else:
                     request += "\r\n"
-                print(request)
                 self.client.sendall(request.encode())
-                response = self.client.recv(4096).decode()
-                print(response)
+                self.get_response(self.args.method)
         finally:    
-            print("close")
             self.client.close()
 
-    def get_response(self):
-        pass
+    def get_response(self, method: str):
+        response = self.client.recv(4096).decode()
+        if method == "GET":
+            ##  ВОТ ТУТ НАДО ПАРСИТЬ ОТВЕТ ЖЕЛАТЕЛЬНО В КЛАССЕ ОТВЕТА. ПОДУМАТЬ
+            pass
+        else:
+            print(response)
 
     def GET_handler(self):
         pass
