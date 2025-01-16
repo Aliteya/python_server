@@ -50,6 +50,7 @@ class Server:
             if not mime_type: 
                 mime_type = "application/octet-stream"
             headers = {
+                "Content-Disposition": req.uri,
                 "Content-Type": mime_type,
                 "Content-Length": str(len(body))
             }

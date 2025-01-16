@@ -19,34 +19,62 @@ class Client:
 
     def send_request(self):
         try:
-            while True:
-                ##Перенести это дело в класс запроса
-                host, path = self.args.url.split('//')[1].split('/', 1)
-                request = f"{self.args.method} {path} HTTP/1.1\r\nHost: {host}\r\n"
-                if self.args.headers:
-                    for header in self.args.headers:
-                        key, value = header.split(":")
-                        request += f"{key}: {value}\r\n"
-                if self.args.data:
-                    request += f"Content-Length: {len(self.args.data)}\r\n"
-                    request += "\r\n" + self.args.data
-                else:
-                    request += "\r\n"
-                self.client.sendall(request.encode())
-                self.get_response(self.args.method)
+            host, path = self.args.url.split('//')[1].split('/', 1)
+            request = f"{self.args.method} /{path} HTTP/1.1\r\nHost: {host}\r\n"
+            if self.args.headers:
+                for header in self.args.headers:
+                    key, value = header.split(":")
+                    request += f"{key}: {value}\r\n"
+            if self.args.data:
+                request += f"Content-Length: {len(self.args.data)}\r\n"
+                request += "\r\n" + self.args.data
+            else:
+                request += "\r\n"
+            self.client.sendall(request.encode())
+            self.get_response(self.args.method)
         finally:    
             self.client.close()
 
     def get_response(self, method: str):
-        response = self.client.recv(4096).decode()
-        if method == "GET":
-            ##  ВОТ ТУТ НАДО ПАРСИТЬ ОТВЕТ ЖЕЛАТЕЛЬНО В КЛАССЕ ОТВЕТА. ПОДУМАТЬ
-            pass
-        else:
-            print(response)
+        response = b""
+        while True:
+            chunk = self.client.recv(4096)
+            if not chunk:
+                break
+            response += chunk
+            if method == "GET":
+                self.GET_handler(response)
+                pass
+            else:
+                print(response)
 
-    def GET_handler(self):
-        pass
+    def GET_handler(self, response: bytes):
+        try:
+            header_end = response.find(b"\r\n\r\n")
+            headers = response[:header_end].decode()
+            body = response[header_end + 4:]
+
+            header_lines = headers.split("\r\n")
+            status_line = header_lines[0]
+            header_dict = {}
+            for line in header_lines[1:]:
+                key, value = line.split(":", 1)
+                header_dict[key.strip()] = value.strip()
+
+            print(f"Статус ответа: {status_line}")
+
+            content_disposition = header_dict.get("Content-Disposition")
+            if content_disposition: 
+                filename = content_disposition.split("/")[-1]
+            else:
+                filename = "downloaded_file"
+
+            with open(filename, "wb") as file:
+                file.write(body)
+            
+            print(f"Файл сохранён как: {filename}")
+        except Exception as e:
+            print(f"Ошибка обработки ответа: {e}")
 
 if __name__ == '__main__':
     client = Client('localhost', 3030)
